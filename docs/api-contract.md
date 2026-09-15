@@ -3,7 +3,7 @@
 **Target Audience:** Developer 2 (UI, DOM Manipulation & Design - Presentation Layer)  
 **Provider:** Developer 1 (Game Engine, Logic & State - Data Layer)  
 **Source Specification:** Assignment #2 - Flexbox Learning Game (`תרגיל מספר 2 - משחק ללימוד Flexbox`)  
-**Version:** 2.1.0 (Full 10-Level Curriculum & Strict PDF Adherence)  
+**Version:** 2.2.0 (Debate Hardened: Geometry Contracts, RTL Isolation & State Hygiene)  
 **Status:** Approved for Implementation  
 
 ---
@@ -25,9 +25,11 @@ This document defines the strict API contract between **Developer 1 (Data/Logic)
    - Total of **10 progressive levels** (exceeds the 6-level minimum for top grading criteria).
    - At least **5 levels require combining 2 or more Flexbox properties** simultaneously to reach the correct solution (exceeds the 3-level minimum).
    - Solutions must not merely alternate between `center` and `flex-start`.
-6. **Fixed Game Board Dimensions:**
+6. **Fixed Game Board Dimensions (`480px × 480px`):**
    - The game board container **must have fixed dimensions (`480px × 480px`)** across all screen sizes so that Flexbox positioning calculations remain deterministic and identical across desktop and mobile devices.
-7. **Original Theme (Anti-Copying Rule):**
+7. **RTL Direction Isolation (`direction: ltr !important;`):**
+   - Because the UI features Hebrew instructions, the document body may use `dir="rtl"`. However, CSS Flexbox inverts main and cross axes in RTL mode. Therefore, `.board-container`, `#target-layer`, and `#player-layer` **must enforce `direction: ltr !important;`** so level solutions remain strictly deterministic.
+8. **Original Theme (Anti-Copying Rule):**
    - Strictly forbidden from copying Flexbox Froggy characters or assets.
    - Default theme: **AstroDock / Cosmic Fleet** (Spaceships docking at Orbital Stations).
 
@@ -109,7 +111,7 @@ interface GameState {
   currentLevelIndex: number;           // 0-indexed level position (0 to 9)
   currentLevelNumber: number;          // 1-indexed (1 to 10) -> "שלב 3 מתוך 10"
   totalLevels: number;                 // Total count of levels (10)
-  currentStyles: Record<string, string>; // Currently applied Flexbox styles
+  currentStyles: Record<string, string>; // Currently applied Flexbox styles (strictly scoped to active level)
   attemptsCurrentLevel: number;        // Attempts count for active level
   isCurrentLevelCompleted: boolean;    // Is current level marked solved?
   isGameCompleted: boolean;            // Have all 10 levels been completed?
@@ -135,6 +137,7 @@ interface ValidationResult {
   message: string;                     // Feedback message for user
   mismatches: MismatchDetail[];        // List of mismatched properties (if any)
   earnedStars?: number;                // 3 stars (1-2 attempts), 2 stars (3-4), 1 star (5+)
+  alreadyCompleted?: boolean;          // True if validate was called on already solved level (prevents attempt inflation)
 }
 
 interface MismatchDetail {
@@ -146,17 +149,15 @@ interface MismatchDetail {
 
 ---
 
-### 3.4 `UserProgress` Schema (`localStorage`)
-Stored under key `'FLEXBOX_GAME_PROGRESS'`. Handled entirely by Developer 1.
+### 3.4 `NavigationResult` Schema
+Standardized response object for all level navigation operations (`nextLevel`, `prevLevel`, `goToLevel`).
 
 ```typescript
-interface UserProgress {
-  version: string;
-  unlockedLevel: number;               // Highest level unlocked (1-10)
-  completedLevels: number[];           // Array of finished level IDs
-  attemptsPerLevel: Record<number, number>; // levelId -> attempts count
-  savedStyles: Record<number, Record<string, string>>; // levelId -> last saved styles
-  lastActiveLevel: number;             // Resumes where user left off
+interface NavigationResult {
+  success: boolean;                    // Did navigation succeed?
+  level: Level | null;                 // The active Level definition (or null if at game bounds)
+  state: GameState;                    // The updated GameState snapshot
+  error?: string;                      // Error explanation if success is false
 }
 ```
 
@@ -167,12 +168,13 @@ interface UserProgress {
 ### 4.1 Initialization & Progression
 
 #### `GameEngine.init(): GameState`
-* **Purpose:** Loads saved progress from `localStorage` (or initializes Level 1) and returns initial state.
-* **Dev 2 Action:** Call on page load to initialize the interface.
+* **Purpose:** Loads saved progress from `localStorage` (or initializes Level 1) and returns initial state snapshot.
+* **Storage Resilience:** Features automated fallback to in-memory storage if `localStorage` throws a SecurityError (e.g. private browsing) or quota exception.
+* **Dev 2 Action:** Call once on page load to initialize the UI.
 
 #### `GameEngine.getCurrentLevel(): Level`
-* **Purpose:** Returns the complete level definition for the active stage.
-* **Dev 2 Action:** Render instructions, build the property controls (`<select>` or buttons), and render `#target-layer` and `#player-layer` items.
+* **Purpose:** Returns a deep-frozen copy of the current `Level` definition.
+* **Dev 2 Action:** Render instructions, build controls, and render `#target-layer` and `#player-layer`.
 
 #### `GameEngine.getAllLevels(): LevelSummary[]`
 * **Purpose:** Returns high-level metadata for all 10 levels for building the level navigation menu / dropdown.
@@ -187,14 +189,19 @@ interface UserProgress {
   }>
   ```
 
-#### `GameEngine.goToLevel(levelNumber: number): { success: boolean, level?: Level, state?: GameState, error?: string }`
+#### `GameEngine.goToLevel(levelNumber: number): NavigationResult`
 * **Purpose:** Allows navigating to any previously unlocked or completed level (1–10).
+* **State Hygiene:** Completely wipes `currentStyles` and resets it strictly to `destinationLevel.initialContainerStyles`.
+* **Returns:** `NavigationResult`
 
-#### `GameEngine.nextLevel(): { level: Level, state: GameState } | null`
-* **Purpose:** Advances to the next stage following a successful validation. Returns `null` if Level 10 was completed.
+#### `GameEngine.nextLevel(): NavigationResult`
+* **Purpose:** Advances to the next stage following a successful validation.
+* **Constraint:** If current level is incomplete, returns `{ success: false, level: currentLevel, state: currentState, error: "Complete current level first." }`.
+* **Returns:** `NavigationResult`
 
-#### `GameEngine.prevLevel(): { level: Level, state: GameState } | null`
+#### `GameEngine.prevLevel(): NavigationResult`
 * **Purpose:** Moves back one level (if `currentLevelNumber > 1`).
+* **Returns:** `NavigationResult`
 
 ---
 
@@ -204,25 +211,34 @@ interface UserProgress {
 * **Parameters:**
   * `property`: CSS property name (`"justify-content"`, `"flex-direction"`, etc.)
   * `value`: Selected CSS value (`"center"`, `"space-between"`, etc.)
-* **Returns:** Updated `currentStyles` map.
-* **Dev 2 Action:** Hook this to the `change` event of inputs. Immediately apply returned styles to the player layer element in the DOM for live preview.
+* **Input Normalization & Whitelist:**
+  * Property names are normalized to lowercase kebab-case.
+  * Property values are trimmed and lowercased.
+  * Rejects properties not included in `availableProperties` for the active level.
+* **Returns:** Deep copy of updated `currentStyles` map.
+* **Dev 2 Action:** Hook this to the `change` event of inputs. Apply returned styles to the `#player-layer` element in the DOM for live preview.
 
 #### `GameEngine.validate(): ValidationResult`
 * **Purpose:** Evaluates `currentStyles` against `targetContainerStyles`.
+* **Normalization & Alias Equivalence:**
+  * Evaluates equality with support for CSS standard aliases (`start` ≡ `flex-start`, `end` ≡ `flex-end`).
+  * Only evaluates the properties defined in `targetContainerStyles`.
+* **Debounce & Attempt Protection:**
+  * If level is already solved (`isCurrentLevelCompleted === true`), `validate()` returns `{ isCorrect: true, alreadyCompleted: true }` without incrementing attempts or altering stars.
 * **Side Effects:**
   * Increments `attemptsCurrentLevel` and updates overall score.
   * If valid: marks level as completed, unlocks next level, and saves to `localStorage`.
   * Triggers event: `'level:success'` or `'level:fail'`.
-* **Returns:** `ValidationResult` (includes `isCorrect`, `message`, `mismatches`, `earnedStars`).
+* **Returns:** `ValidationResult`
 
 ---
 
 ### 4.3 Reset Functions (Mandatory Assignment Requirement)
 
-#### `GameEngine.resetCurrentLevel(): { level: Level, state: GameState }`
+#### `GameEngine.resetCurrentLevel(): NavigationResult`
 * **Purpose:** Fulfills assignment requirement: *"יש לממש אפשרות לאיפוס השלב הנוכחי לערכי ברירת המחדל"*.
-* **Behavior:** Reverts `currentStyles` back to `initialContainerStyles`.
-* **Dev 2 Action:** Bound to "Reset Level" button; re-syncs input dropdowns and resets ship positions.
+* **Behavior:** Reverts `currentStyles` back to `initialContainerStyles`. Does not clear historical completion status.
+* **Returns:** `NavigationResult`
 
 #### `GameEngine.resetAllProgress(): GameState`
 * **Purpose:** Clears `localStorage` and resets the entire game to Level 1.
@@ -232,8 +248,9 @@ interface UserProgress {
 ## 🔔 5. Reactive Event System
 
 ```javascript
-GameEngine.on(eventName: string, handler: Function): void
-GameEngine.off(eventName: string, handler: Function): void
+// Register listener. Returns an unsubscribe function!
+const unsubscribe = GameEngine.on(eventName: string, handler: Function): Function;
+GameEngine.off(eventName: string, handler: Function): void;
 ```
 
 ### Event Registry:
@@ -246,50 +263,83 @@ GameEngine.off(eventName: string, handler: Function): void
 | `level:fail` | `{ result: ValidationResult, state: GameState }` | Validation failed | Highlight mismatched controls, play error shake |
 | `game:completed` | `{ state: GameState, summary: LevelScoreSummary }` | All 10 levels finished | Display Victory Screen, total score, and replay option |
 
+* **Fault Isolation:** The engine wraps all event subscriber callbacks in isolated `try...catch` blocks so that a DOM rendering exception in Dev 2's code will never crash the game engine.
+
 ---
 
 ## 📐 6. DOM & Board Layout Guidelines for Developer 2
 
-### 6.1 Fixed Dimension Board Requirement
+### 6.1 Fixed Dimension Board & Direction Isolation
 As mandated by the assignment:
 > *"לוח המשחק יהיה בעל רוחב וגובה קבועים בכל גדלי המסך, כדי שהפתרון לכל שלב יישאר זהה ואינו תלוי ברזולוציית המסך."*
 
-* The game board container **must have fixed dimensions (`480px × 480px`)**:
-  ```css
-  .board-container {
-    width: 480px;
-    height: 480px;
-    position: relative;
-    overflow: hidden;
-    border-radius: 12px;
-  }
-  ```
-* On mobile screens smaller than 480px, the site wrapper handles responsiveness using CSS scale or overflow so the board layout stays identical:
-  ```css
-  @media (max-width: 520px) {
-    .board-wrapper {
-      transform: scale(0.7);
-      transform-origin: top center;
-    }
-  }
-  ```
+```css
+/* Board Container: Fixed dimensions + LTR isolation */
+.board-container {
+  width: 480px;
+  height: 480px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  direction: ltr !important; /* CRITICAL: Prevents RTL language tags from inverting Flexbox axes! */
+}
 
-### 6.2 The Dual-Layer Board Pattern
-```html
-<div class="board-container">
-  <!-- Target Layer: Shows docking bays with targetContainerStyles -->
-  <div id="target-layer" class="flex-layer target-layer"></div>
+/* Dual Layers */
+.flex-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  direction: ltr !important;
+  box-sizing: border-box;
+}
+```
 
-  <!-- Player Layer: Controllable ships with currentStyles applied -->
-  <div id="player-layer" class="flex-layer player-layer"></div>
-</div>
+### 6.2 The Item Dimension Contract (Crucial for `flex-wrap`)
+For `flex-wrap: wrap` to behave deterministically on a `480px` container (Levels 8 & 9):
+```css
+/* Game Item Box Model Contract */
+.game-item {
+  width: 130px;
+  height: 130px;
+  flex: 0 0 130px; /* flex-grow: 0, flex-shrink: 0, flex-basis: 130px */
+  box-sizing: border-box;
+  margin: 10px; /* 130px + 20px = 150px per item */
+}
+```
+**Mathematical Determinism:**
+* In a `480px` container, 3 items take `(130px + 20px) * 3 = 450px < 480px` (fits row 1).
+* 4 items take `600px > 480px` (forces wrap to row 2).
+* 6 items distribute into two clean rows of 3 items each.
+
+### 6.3 State Transition Hygiene (Preventing Zombie Styles)
+When switching levels, Developer 2 must reset inline styles on both layers:
+```javascript
+function loadLevelView(level, state) {
+  const targetLayer = document.getElementById('target-layer');
+  const playerLayer = document.getElementById('player-layer');
+
+  // 1. Wipe previous inline styles completely
+  targetLayer.style.cssText = 'display: flex; direction: ltr;';
+  playerLayer.style.cssText = 'display: flex; direction: ltr;';
+
+  // 2. Apply target styles to target-layer
+  for (const [prop, val] of Object.entries(level.targetContainerStyles)) {
+    targetLayer.style.setProperty(prop, val);
+  }
+
+  // 3. Apply current styles to player-layer
+  for (const [prop, val] of Object.entries(state.currentStyles)) {
+    playerLayer.style.setProperty(prop, val);
+  }
+}
 ```
 
 ---
 
 ## 🎮 7. The 10 Official Curriculum Levels Specification
-
-The 10 stages cover all required Flexbox properties, combinations, and edge cases:
 
 | Level | Title | Target Properties | Assignment Criteria Satisfied | Items |
 | :---: | :--- | :--- | :--- | :---: |
@@ -306,7 +356,7 @@ The 10 stages cover all required Flexbox properties, combinations, and edge case
 
 ---
 
-### Detailed Level Specifications (Ready for Implementation in `js/levels.js`)
+### Detailed Level Specifications (Authoritative Dataset in `js/levels.js`)
 
 #### Level 1: Main Thrusters: Center
 * **Instruction (HE):** כוונו את חללית הסיור למרכז רציף הנחיתה לאורך הציר הראשי בעזרת `justify-content`.
