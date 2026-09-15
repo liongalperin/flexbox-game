@@ -18,10 +18,10 @@ function deepFreeze(obj) {
 const RAW_LEVELS = [
   {
     id: 1,
-    title: 'Main Thrusters: Center',
-    instructionHe: 'כוונו את חללית הסיור למרכז רציף הנחיתה לאורך הציר הראשי בעזרת justify-content.',
-    instructionEn: 'Guide the scout ship to the center of the docking bay along the main axis using justify-content.',
-    hint: 'Use "justify-content: center" to position items in the middle of the main axis.',
+    title: 'המראה ראשונה: מרכוז',
+    instructionHe: 'כוונו את 3 מסוקי הסיור למרכז המנחת לאורך הציר הראשי בעזרת justify-content.',
+    instructionEn: 'Guide the 3 scout helicopters to the center of the helipad along the main axis using justify-content.',
+    hint: 'הציר הראשי של flex-direction: row הוא האופקי. איזה ערך ממרכז פריטים לאורכו?',
     requiresMultipleProperties: false,
     usesFlexWrap: false,
     availableProperties: [
@@ -40,15 +40,17 @@ const RAW_LEVELS = [
       'justify-content': 'center'
     },
     items: [
-      { id: 'ship-1', type: 'scout-blue', label: '01' }
+      { id: 'heli-1', type: 'scout-blue' },
+      { id: 'heli-2', type: 'scout-blue' },
+      { id: 'heli-3', type: 'scout-blue' }
     ]
   },
   {
     id: 2,
-    title: 'Fleet Separation',
-    instructionHe: 'פזרו את 3 חלליות הסיור במרווח שווה ביניהן לרוחב הרציף, כך שהחיצוניות ייצמדו לדפנות.',
-    instructionEn: 'Disperse the 3 patrol ships with equal space separating them across the bay, pushing outer ships to the edges.',
-    hint: '"space-between" pushes the first and last items to the edges while distributing the rest evenly.',
+    title: 'פריסת טייסת',
+    instructionHe: 'פזרו את 3 מסוקי הסיור במרווח שווה ביניהם לרוחב המנחת, כך שהחיצוניים ייתקרבו כמה שיותר לדפנות.',
+    instructionEn: 'Disperse the 3 patrol helicopters with equal space between them, pushing the outer ones to the edges.',
+    hint: 'יש ערך שמצמיד את הפריט הראשון להתחלה, את האחרון לסוף, ומחלק את היתר שווה בשווה.',
     requiresMultipleProperties: false,
     usesFlexWrap: false,
     availableProperties: [
@@ -67,17 +69,17 @@ const RAW_LEVELS = [
       'justify-content': 'space-between'
     },
     items: [
-      { id: 'ship-1', type: 'patrol-green', label: 'P1' },
-      { id: 'ship-2', type: 'patrol-green', label: 'P2' },
-      { id: 'ship-3', type: 'patrol-green', label: 'P3' }
+      { id: 'heli-1', type: 'patrol-green' },
+      { id: 'heli-2', type: 'patrol-green' },
+      { id: 'heli-3', type: 'patrol-green' }
     ]
   },
   {
     id: 3,
-    title: 'Vertical Alignment',
-    instructionHe: 'הנחיתו את 2 ספינות המשא בתחתית הרציף לאורך הציר המשני בעזרת align-items.',
-    instructionEn: 'Align the 2 cargo haulers to the bottom floor of the bay along the cross axis using align-items.',
-    hint: 'align-items controls positioning on the cross-axis. "flex-end" anchors items to the bottom in a row layout.',
+    title: 'נחיתה נמוכה',
+    instructionHe: 'הנחיתו את 2 מסוקי המשא בתחתית המנחת לאורך הציר המשני בעזרת align-items.',
+    instructionEn: 'Land the 2 cargo helicopters at the bottom of the pad along the cross axis using align-items.',
+    hint: 'align-items שולט על הציר המשני. בשורה, הציר המשני הוא האנכי.',
     requiresMultipleProperties: false,
     usesFlexWrap: false,
     availableProperties: [
@@ -96,16 +98,16 @@ const RAW_LEVELS = [
       'align-items': 'flex-end'
     },
     items: [
-      { id: 'ship-1', type: 'cargo-yellow', label: 'C1' },
-      { id: 'ship-2', type: 'cargo-yellow', label: 'C2' }
+      { id: 'heli-1', type: 'cargo-yellow' },
+      { id: 'heli-2', type: 'cargo-yellow' }
     ]
   },
   {
     id: 4,
-    title: 'Orbital Centerpoint',
-    instructionHe: 'כוונו את ספינת הפיקוד בדיוק למרכז הרציף – הן לאורך הציר הראשי והן לאורך הציר המשני.',
-    instructionEn: 'Center the command flagship in the dead center of the bay along both the main and cross axes.',
-    hint: 'Combine "justify-content: center" and "align-items: center" for perfect 2D centering.',
+    title: 'מרכז הפיקוד',
+    instructionHe: 'כוונו את 2 מסוקי הפיקוד בדיוק למרכז המנחת — הן לאורך הציר הראשי והן לאורך הציר המשני.',
+    instructionEn: 'Center the 2 command helicopters in the dead center of the pad, on both the main and cross axes.',
+    hint: 'מרכוז מושלם דורש שני מאפיינים יחד — אחד לכל ציר.',
     requiresMultipleProperties: true,
     usesFlexWrap: false,
     availableProperties: [
@@ -133,15 +135,16 @@ const RAW_LEVELS = [
       'align-items': 'center'
     },
     items: [
-      { id: 'ship-1', type: 'flagship-gold', label: 'CMD' }
+      { id: 'heli-1', type: 'command-gold' },
+      { id: 'heli-2', type: 'command-gold' }
     ]
   },
   {
     id: 5,
-    title: 'Inverted Vector',
-    instructionHe: 'הפכו את סדר העמידה של 3 המיירטים מימין לשמאל באמצעות שינוי כיוון הציר הראשי.',
-    instructionEn: 'Reverse the order of the 3 interceptors from right to left by changing the main axis direction.',
-    hint: '"flex-direction: row-reverse" switches the main axis direction from right to left.',
+    title: 'סדר הפוך',
+    instructionHe: 'הפכו את סדר העמידה של 3 מסוקי היירוט מימין לשמאל באמצעות שינוי כיוון הציר הראשי.',
+    instructionEn: 'Reverse the order of the 3 interceptors right-to-left by changing the main axis direction.',
+    hint: 'flex-direction יכול גם להפוך את כיוון הזרימה, לא רק להחליף בין שורה לעמודה.',
     requiresMultipleProperties: false,
     usesFlexWrap: false,
     availableProperties: [
@@ -160,17 +163,17 @@ const RAW_LEVELS = [
       'flex-direction': 'row-reverse'
     },
     items: [
-      { id: 'ship-1', type: 'interceptor-red', label: 'α' },
-      { id: 'ship-2', type: 'interceptor-red', label: 'β' },
-      { id: 'ship-3', type: 'interceptor-red', label: 'γ' }
+      { id: 'heli-1', type: 'interceptor-blue' },
+      { id: 'heli-2', type: 'interceptor-yellow' },
+      { id: 'heli-3', type: 'interceptor-pink' }
     ]
   },
   {
     id: 6,
-    title: 'Column Formation',
-    instructionHe: 'סדרו את 3 הגשושיות בעמודה אנכית מלמעלה למטה, עם רווח שווה מסביב לכל גשושית.',
-    instructionEn: 'Arrange the 3 research probes in a vertical column from top to bottom, with equal space around each probe.',
-    hint: 'Set "flex-direction: column", which turns the vertical axis into the main axis, then adjust "justify-content".',
+    title: 'מבנה טור',
+    instructionHe: 'סדרו את 3 מסוקי הגישוש בעמודה אנכית מלמעלה למטה, עם רווח שווה מסביב לכל מסוק.',
+    instructionEn: 'Arrange the 3 recon helicopters in a vertical column, with equal space around each one.',
+    hint: 'קודם שנו את הציר לאנכי — ואז שימו לב שיש הבדל בין space-around לבין space-between.',
     requiresMultipleProperties: true,
     usesFlexWrap: false,
     availableProperties: [
@@ -178,7 +181,7 @@ const RAW_LEVELS = [
         property: 'flex-direction',
         label: 'flex-direction',
         controlType: 'select',
-        options: ['row', 'row-reverse', 'column', 'column-reverse'],
+        options: ['row', 'row-reverse', 'column'],
         defaultValue: 'row'
       },
       {
@@ -198,17 +201,17 @@ const RAW_LEVELS = [
       'justify-content': 'space-around'
     },
     items: [
-      { id: 'ship-1', type: 'probe-cyan', label: '01' },
-      { id: 'ship-2', type: 'probe-cyan', label: '02' },
-      { id: 'ship-3', type: 'probe-cyan', label: '03' }
+      { id: 'heli-1', type: 'recon-cyan' },
+      { id: 'heli-2', type: 'recon-cyan' },
+      { id: 'heli-3', type: 'recon-cyan' }
     ]
   },
   {
     id: 7,
-    title: 'Corner Docking',
-    instructionHe: 'סדרו את 2 הרחפנים בעמודה הפוכה (מלמטה למעלה) והצמידו אותם לדופן הימנית של הרציף.',
-    instructionEn: 'Arrange the 2 drone fighters in an inverted column (bottom-to-top) aligned against the right wall of the bay.',
-    hint: 'In a column layout, align-items controls the horizontal cross axis. "column-reverse" stacks items upward.',
+    title: 'עגינת פינה',
+    instructionHe: 'סדרו את 2 הרחפנים בעמודה הפוכה (מלמטה למעלה) והצמידו אותם לדופן הימנית של המנחת.',
+    instructionEn: 'Arrange the 2 drones in an inverted column (bottom-to-top) against the right wall of the pad.',
+    hint: 'כשהציר הראשי אנכי, align-items מזיז פריטים שמאלה וימינה.',
     requiresMultipleProperties: true,
     usesFlexWrap: false,
     availableProperties: [
@@ -236,16 +239,16 @@ const RAW_LEVELS = [
       'align-items': 'flex-end'
     },
     items: [
-      { id: 'ship-1', type: 'drone-purple', label: 'D1' },
-      { id: 'ship-2', type: 'drone-purple', label: 'D2' }
+      { id: 'heli-1', type: 'drone-blue' },
+      { id: 'heli-2', type: 'drone-yellow' }
     ]
   },
   {
     id: 8,
-    title: 'Squadron Hyper-Wrap',
-    instructionHe: 'טייסת של 6 חלליות אינה נכנסת בשורה אחת! אפשרו גלישת פריטים לשורות נוספות ומרכזו אותן.',
-    instructionEn: 'A squadron of 6 fighters cannot fit on a single line! Allow items to wrap into multiple rows and center them.',
-    hint: '"flex-wrap: wrap" allows overflowing flex items to break into multiple rows.',
+    title: 'גלישת טייסת',
+    instructionHe: 'טייסת של 6 מסוקים אינה נכנסת בשורה אחת! אפשרו גלישה לשורות נוספות ומרכזו אותן.',
+    instructionEn: 'A squadron of 6 cannot fit on one line! Allow wrapping onto extra rows and center them.',
+    hint: 'flex-wrap פותח שורה נוספת. אחר כך מרכזו כל שורה לאורך הציר הראשי.',
     requiresMultipleProperties: true,
     usesFlexWrap: true,
     availableProperties: [
@@ -273,20 +276,20 @@ const RAW_LEVELS = [
       'justify-content': 'center'
     },
     items: [
-      { id: 'ship-1', type: 'fighter-orange', label: 'F1' },
-      { id: 'ship-2', type: 'fighter-orange', label: 'F2' },
-      { id: 'ship-3', type: 'fighter-orange', label: 'F3' },
-      { id: 'ship-4', type: 'fighter-orange', label: 'F4' },
-      { id: 'ship-5', type: 'fighter-orange', label: 'F5' },
-      { id: 'ship-6', type: 'fighter-orange', label: 'F6' }
+      { id: 'heli-1', type: 'gunship-blue' },
+      { id: 'heli-2', type: 'gunship-yellow' },
+      { id: 'heli-3', type: 'gunship-pink' },
+      { id: 'heli-4', type: 'gunship-green' },
+      { id: 'heli-5', type: 'gunship-orange' },
+      { id: 'heli-6', type: 'gunship-purple' }
     ]
   },
   {
     id: 9,
-    title: 'Inverted Multi-Deck',
-    instructionHe: 'סדרו את 6 הסיירות בגלישת שורות הפוכה (מלמטה למעלה), עם מרווח מקסימלי בין הספינות בכל שורה.',
-    instructionEn: 'Arrange the 6 cruisers to wrap in reverse row order (bottom-to-top), with maximum spacing between ships in each row.',
-    hint: '"wrap-reverse" creates rows starting from the bottom upward.',
+    title: 'סיפון הפוך',
+    instructionHe: 'סדרו את 6 מסוקי הקרב בגלישת שורות הפוכה (מלמטה למעלה), עם מרווח מקסימלי בין המסוקים בכל שורה.',
+    instructionEn: 'Wrap the 6 gunships in reverse row order (bottom-to-top), with maximum spacing in each row.',
+    hint: 'ל-flex-wrap יש גם ערך שמהפך את סדר השורות. למרווח מקסימלי — הצמידו את הקצוות.',
     requiresMultipleProperties: true,
     usesFlexWrap: true,
     availableProperties: [
@@ -314,20 +317,20 @@ const RAW_LEVELS = [
       'justify-content': 'space-between'
     },
     items: [
-      { id: 'ship-1', type: 'cruiser-blue', label: 'K1' },
-      { id: 'ship-2', type: 'cruiser-blue', label: 'K2' },
-      { id: 'ship-3', type: 'cruiser-blue', label: 'K3' },
-      { id: 'ship-4', type: 'cruiser-blue', label: 'K4' },
-      { id: 'ship-5', type: 'cruiser-blue', label: 'K5' },
-      { id: 'ship-6', type: 'cruiser-blue', label: 'K6' }
+      { id: 'heli-1', type: 'attack-blue' },
+      { id: 'heli-2', type: 'attack-yellow' },
+      { id: 'heli-3', type: 'attack-pink' },
+      { id: 'heli-4', type: 'attack-green' },
+      { id: 'heli-5', type: 'attack-orange' },
+      { id: 'heli-6', type: 'attack-purple' }
     ]
   },
   {
     id: 10,
-    title: 'Grand Fleet Admiral',
-    instructionHe: 'המשימה האחרונה! סדרו את 3 ספינות הדגל בעמודה, פזרו אותן מקצה לקצה לאורך העמודה ומרכזו אותן לרוחב הרציף.',
-    instructionEn: 'The ultimate fleet deployment! Arrange the 3 capital flagships in a column, spread them from end to end along the column, and center them across the bay.',
-    hint: 'Combine "flex-direction: column", "justify-content: space-between", and "align-items: center".',
+    title: 'מסדר המפקדה',
+    instructionHe: 'המשימה האחרונה! סדרו את 3 מסוקי הפיקוד בעמודה, במרווחים שווים לחלוטין — גם ביניהם וגם מהקצוות — ומרכזו אותם לרוחב המנחת.',
+    instructionEn: 'Final mission! Stack the 3 command helicopters in a column with perfectly equal gaps, including the edges, centred across the pad.',
+    hint: 'כשהציר הראשי אנכי, justify-content מפזר לגובה ו-align-items ממקם לרוחב. שימו לב להבדל בין space-around לבין space-evenly — רק באחד מהם גם המרווח מהקצוות שווה.',
     requiresMultipleProperties: true,
     usesFlexWrap: false,
     availableProperties: [
@@ -335,7 +338,7 @@ const RAW_LEVELS = [
         property: 'flex-direction',
         label: 'flex-direction',
         controlType: 'select',
-        options: ['row', 'row-reverse', 'column', 'column-reverse'],
+        options: ['row', 'row-reverse', 'column'],
         defaultValue: 'row'
       },
       {
@@ -360,13 +363,13 @@ const RAW_LEVELS = [
     },
     targetContainerStyles: {
       'flex-direction': 'column',
-      'justify-content': 'space-between',
+      'justify-content': 'space-evenly',
       'align-items': 'center'
     },
     items: [
-      { id: 'ship-1', type: 'admiral-star', label: '★1' },
-      { id: 'ship-2', type: 'admiral-star', label: '★2' },
-      { id: 'ship-3', type: 'admiral-star', label: '★3' }
+      { id: 'heli-1', type: 'hq-gold' },
+      { id: 'heli-2', type: 'hq-gold' },
+      { id: 'heli-3', type: 'hq-gold' }
     ]
   }
 ];

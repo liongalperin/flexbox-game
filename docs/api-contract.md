@@ -367,7 +367,7 @@ function loadLevelView(level, state) {
 * **Items:** 1 ship (`scout-blue`)
 
 #### Level 2: Fleet Separation
-* **Instruction (HE):** פזרו את 3 חלליות הסיור במרווח שווה ביניהן לרוחב הרציף, כך שהחיצוניות ייצמדו לדפנות.
+* **Instruction (HE):** פזרו את 3 חלליות הסיור במרווח שווה ביניהן לרוחב הרציף, כך שהחיצוניות ייתקרבו כמה שיותר לדפנות.
 * **Instruction (EN):** Disperse the 3 patrol ships with equal space separating them across the bay, pushing outer ships to the edges.
 * **Initial Styles:** `{ "justify-content": "flex-start" }`
 * **Target Styles:** `{ "justify-content": "space-between" }`
