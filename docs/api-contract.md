@@ -3,7 +3,7 @@
 **Target Audience:** Developer 2 (UI, DOM Manipulation & Design - Presentation Layer)  
 **Provider:** Developer 1 (Game Engine, Logic & State - Data Layer)  
 **Source Specification:** Assignment #2 - Flexbox Learning Game (`תרגיל מספר 2 - משחק ללימוד Flexbox`)  
-**Version:** 2.0.0 (Corrected & Aligned with PDF Requirements)  
+**Version:** 2.1.0 (Full 10-Level Curriculum & Strict PDF Adherence)  
 **Status:** Approved for Implementation  
 
 ---
@@ -13,7 +13,7 @@
 This document defines the strict API contract between **Developer 1 (Data/Logic)** and **Developer 2 (UI/Presentation)**. All interfaces in this contract comply with the official assignment requirements:
 
 1. **Vanilla JavaScript Only:** Absolutely NO external JS libraries (no jQuery, React, Lodash, etc.).
-2. **NO CSS Grid:** Tasks and game solutions must rely exclusively on CSS Flexbox.
+2. **NO CSS Grid:** All puzzle challenges must be solved strictly using CSS Flexbox.
 3. **Single Page Application (SPA):** Transitions between levels must happen dynamically in the DOM with **zero page reloads**.
 4. **Mandatory Flexbox Properties:**
    - `display: flex` (active on container by default)
@@ -21,12 +21,12 @@ This document defines the strict API contract between **Developer 1 (Data/Logic)
    - `justify-content` (`flex-start`, `flex-end`, `center`, `space-between`, `space-around`, `space-evenly`)
    - `align-items` (`flex-start`, `flex-end`, `center`, `baseline`, `stretch`)
    - `flex-wrap` (`nowrap`, `wrap`, `wrap-reverse`) — **★ Required on at least one level**
-5. **Level Design Diversity:**
-   - Minimum **6 unique levels** (8 provided out of the box).
-   - At least **3 levels must require combining 2 or more Flexbox properties** simultaneously to reach the correct solution.
+5. **Level Design Diversity & Scope:**
+   - Total of **10 progressive levels** (exceeds the 6-level minimum for top grading criteria).
+   - At least **5 levels require combining 2 or more Flexbox properties** simultaneously to reach the correct solution (exceeds the 3-level minimum).
    - Solutions must not merely alternate between `center` and `flex-start`.
 6. **Fixed Game Board Dimensions:**
-   - The game board container **must have a fixed width and height (e.g. 480px × 480px)** on all screen sizes so that Flexbox positioning calculations remain deterministic and identical across desktop and mobile devices.
+   - The game board container **must have fixed dimensions (`480px × 480px`)** across all screen sizes so that Flexbox positioning calculations remain deterministic and identical across desktop and mobile devices.
 7. **Original Theme (Anti-Copying Rule):**
    - Strictly forbidden from copying Flexbox Froggy characters or assets.
    - Default theme: **AstroDock / Cosmic Fleet** (Spaceships docking at Orbital Stations).
@@ -71,10 +71,11 @@ Defines each level's metadata, educational goal, expected Flexbox styles, and bo
 
 ```typescript
 interface Level {
-  id: number;                          // Level number: 1, 2, 3...
-  title: string;                       // Short level title (e.g., "Docking the Scout")
-  instruction: string;                 // Clear Hebrew/English instructions
-  hint?: string;                       // Optional hint if user struggles
+  id: number;                          // Level number: 1 to 10
+  title: string;                       // Short level title (e.g., "Main Thrusters: Center")
+  instructionHe: string;               // Clear instruction in Hebrew
+  instructionEn: string;               // Clear instruction in English
+  hint?: string;                       // Educational hint
   availableProperties: PropertyControl[]; // Which CSS properties are controllable in this level
   initialContainerStyles: Record<string, string>; // Starting CSS rules
   targetContainerStyles: Record<string, string>;  // Target CSS rules that solve the level
@@ -105,21 +106,21 @@ Represents the current dynamic state of the application.
 
 ```typescript
 interface GameState {
-  currentLevelIndex: number;           // 0-indexed level position
-  currentLevelNumber: number;          // 1-indexed (e.g. 3) -> "שלב 3 מתוך 8"
-  totalLevels: number;                 // Total count of levels (e.g. 8)
+  currentLevelIndex: number;           // 0-indexed level position (0 to 9)
+  currentLevelNumber: number;          // 1-indexed (1 to 10) -> "שלב 3 מתוך 10"
+  totalLevels: number;                 // Total count of levels (10)
   currentStyles: Record<string, string>; // Currently applied Flexbox styles
   attemptsCurrentLevel: number;        // Attempts count for active level
   isCurrentLevelCompleted: boolean;    // Is current level marked solved?
-  isGameCompleted: boolean;            // Have all levels been completed?
-  unlockedLevelMax: number;            // Highest level reached (for level select)
+  isGameCompleted: boolean;            // Have all 10 levels been completed?
+  unlockedLevelMax: number;            // Highest level reached (for level select navigation)
   scores: LevelScoreSummary;           // Scoring and stars breakdown
 }
 
 interface LevelScoreSummary {
   totalAttempts: number;
-  completedLevels: number[];           // Array of solved level IDs [1, 2, 3]
-  starsPerLevel: Record<number, number>; // Level ID -> Stars earned (1-3 stars)
+  completedLevels: number[];           // Array of solved level IDs [1, 2, 3, ...]
+  starsPerLevel: Record<number, number>; // Level ID -> Stars earned (1 to 3 stars)
 }
 ```
 
@@ -151,7 +152,7 @@ Stored under key `'FLEXBOX_GAME_PROGRESS'`. Handled entirely by Developer 1.
 ```typescript
 interface UserProgress {
   version: string;
-  unlockedLevel: number;               // Highest level unlocked
+  unlockedLevel: number;               // Highest level unlocked (1-10)
   completedLevels: number[];           // Array of finished level IDs
   attemptsPerLevel: Record<number, number>; // levelId -> attempts count
   savedStyles: Record<number, Record<string, string>>; // levelId -> last saved styles
@@ -163,22 +164,18 @@ interface UserProgress {
 
 ## 🛠️ 4. GameEngine API Methods (Developer 1 -> Developer 2)
 
-All interaction from Developer 2 into the Game Engine occurs via the methods below:
-
 ### 4.1 Initialization & Progression
 
 #### `GameEngine.init(): GameState`
-* **Purpose:** Loads saved progress from `localStorage` (or initializes defaults) and sets active level.
-* **Returns:** `GameState`
-* **Dev 2 Action:** Call once on page load to render UI headers, level select options, and the board.
+* **Purpose:** Loads saved progress from `localStorage` (or initializes Level 1) and returns initial state.
+* **Dev 2 Action:** Call on page load to initialize the interface.
 
 #### `GameEngine.getCurrentLevel(): Level`
 * **Purpose:** Returns the complete level definition for the active stage.
-* **Returns:** `Level`
-* **Dev 2 Action:** Build the instruction box, generate the interactive controls (`<select>` or buttons), and render the target & player game items.
+* **Dev 2 Action:** Render instructions, build the property controls (`<select>` or buttons), and render `#target-layer` and `#player-layer` items.
 
 #### `GameEngine.getAllLevels(): LevelSummary[]`
-* **Purpose:** Returns high-level metadata for every level in the game for building the level navigation menu / drawer.
+* **Purpose:** Returns high-level metadata for all 10 levels for building the level navigation menu / dropdown.
 * **Returns:** 
   ```typescript
   Array<{
@@ -189,17 +186,12 @@ All interaction from Developer 2 into the Game Engine occurs via the methods bel
     stars: number;
   }>
   ```
-* **Dev 2 Action:** Populate the level selector dropdown/grid with locked/unlocked indicators.
 
 #### `GameEngine.goToLevel(levelNumber: number): { success: boolean, level?: Level, state?: GameState, error?: string }`
-* **Purpose:** Allows navigating to any previously unlocked or completed level.
-* **Returns:** Object with status and new level/state if allowed.
-* **Constraint:** Prevent jumping to locked levels ahead of user's highest progress.
+* **Purpose:** Allows navigating to any previously unlocked or completed level (1–10).
 
 #### `GameEngine.nextLevel(): { level: Level, state: GameState } | null`
-* **Purpose:** Advances to the next level following a successful solution.
-* **Returns:** Next level data, or `null` if the final level was beaten.
-* **SPA Rule:** Updates state internally; Dev 2 updates the DOM in-place without page reload.
+* **Purpose:** Advances to the next stage following a successful validation. Returns `null` if Level 10 was completed.
 
 #### `GameEngine.prevLevel(): { level: Level, state: GameState } | null`
 * **Purpose:** Moves back one level (if `currentLevelNumber > 1`).
@@ -213,7 +205,7 @@ All interaction from Developer 2 into the Game Engine occurs via the methods bel
   * `property`: CSS property name (`"justify-content"`, `"flex-direction"`, etc.)
   * `value`: Selected CSS value (`"center"`, `"space-between"`, etc.)
 * **Returns:** Updated `currentStyles` map.
-* **Dev 2 Action:** Hook this to the `change` event of inputs. Immediately apply returned styles to the player layer element in the DOM for real-time visual feedback.
+* **Dev 2 Action:** Hook this to the `change` event of inputs. Immediately apply returned styles to the player layer element in the DOM for live preview.
 
 #### `GameEngine.validate(): ValidationResult`
 * **Purpose:** Evaluates `currentStyles` against `targetContainerStyles`.
@@ -222,28 +214,22 @@ All interaction from Developer 2 into the Game Engine occurs via the methods bel
   * If valid: marks level as completed, unlocks next level, and saves to `localStorage`.
   * Triggers event: `'level:success'` or `'level:fail'`.
 * **Returns:** `ValidationResult` (includes `isCorrect`, `message`, `mismatches`, `earnedStars`).
-* **Dev 2 Action:**
-  * If `isCorrect`: display success banner, trigger victory animation, enable "Next Level" button.
-  * If incorrect: display error message, trigger shake animation on the player items, leave controls editable.
 
 ---
 
-### 4.3 Reset Functions (Assignment Requirement)
+### 4.3 Reset Functions (Mandatory Assignment Requirement)
 
 #### `GameEngine.resetCurrentLevel(): { level: Level, state: GameState }`
 * **Purpose:** Fulfills assignment requirement: *"יש לממש אפשרות לאיפוס השלב הנוכחי לערכי ברירת המחדל"*.
-* **Behavior:** Reverts `currentStyles` back to `initialContainerStyles`. Does not clear historical completion status.
-* **Dev 2 Action:** Triggered by the "Reset Level" button; re-syncs input dropdowns and resets player item positions.
+* **Behavior:** Reverts `currentStyles` back to `initialContainerStyles`.
+* **Dev 2 Action:** Bound to "Reset Level" button; re-syncs input dropdowns and resets ship positions.
 
 #### `GameEngine.resetAllProgress(): GameState`
 * **Purpose:** Clears `localStorage` and resets the entire game to Level 1.
-* **Dev 2 Action:** Bound to "Start Over" / "Reset All" button in settings.
 
 ---
 
 ## 🔔 5. Reactive Event System
-
-Developer 2 can subscribe to state events instead of manual polling:
 
 ```javascript
 GameEngine.on(eventName: string, handler: Function): void
@@ -254,11 +240,11 @@ GameEngine.off(eventName: string, handler: Function): void
 
 | Event | Payload | When it fires | UI Reaction |
 | :--- | :--- | :--- | :--- |
-| `level:change` | `{ level: Level, state: GameState }` | Level changed (via next, prev, or picker) | Re-render instructions, controls, board items |
+| `level:change` | `{ level: Level, state: GameState }` | Level changed (next, prev, or picker) | Re-render instructions, controls, board items |
 | `style:change` | `{ property, value, currentStyles }` | User adjusts any Flexbox control | Animate player fleet into new position |
 | `level:success` | `{ result: ValidationResult, state: GameState }` | Level validated successfully | Play sound, show success banner, open next button |
 | `level:fail` | `{ result: ValidationResult, state: GameState }` | Validation failed | Highlight mismatched controls, play error shake |
-| `game:completed` | `{ state: GameState, summary: LevelScoreSummary }` | All 8 levels finished | Display Victory Screen, total score, and replay option |
+| `game:completed` | `{ state: GameState, summary: LevelScoreSummary }` | All 10 levels finished | Display Victory Screen, total score, and replay option |
 
 ---
 
@@ -268,7 +254,7 @@ GameEngine.off(eventName: string, handler: Function): void
 As mandated by the assignment:
 > *"לוח המשחק יהיה בעל רוחב וגובה קבועים בכל גדלי המסך, כדי שהפתרון לכל שלב יישאר זהה ואינו תלוי ברזולוציית המסך."*
 
-* The game board container **must have fixed dimensions**:
+* The game board container **must have fixed dimensions (`480px × 480px`)**:
   ```css
   .board-container {
     width: 480px;
@@ -278,63 +264,129 @@ As mandated by the assignment:
     border-radius: 12px;
   }
   ```
-* On mobile screens smaller than 480px, the page wrapper handles responsiveness using `overflow-x: auto` or CSS scale: `transform: scale(...)` to preserve exact relative layout.
+* On mobile screens smaller than 480px, the site wrapper handles responsiveness using CSS scale or overflow so the board layout stays identical:
+  ```css
+  @media (max-width: 520px) {
+    .board-wrapper {
+      transform: scale(0.7);
+      transform-origin: top center;
+    }
+  }
+  ```
 
 ### 6.2 The Dual-Layer Board Pattern
-To achieve deterministic visual matching:
 ```html
 <div class="board-container">
-  <!-- Target Layer: Shows landing pods/docks with targetContainerStyles -->
-  <div id="target-layer" class="flex-layer target-layer">
-    <!-- Rendered target docks -->
-  </div>
+  <!-- Target Layer: Shows docking bays with targetContainerStyles -->
+  <div id="target-layer" class="flex-layer target-layer"></div>
 
   <!-- Player Layer: Controllable ships with currentStyles applied -->
-  <div id="player-layer" class="flex-layer player-layer">
-    <!-- Rendered ships -->
-  </div>
+  <div id="player-layer" class="flex-layer player-layer"></div>
 </div>
-```
-
-```css
-.flex-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex; /* Flexbox active on both layers */
-}
-```
-
-When user selects styles:
-```javascript
-function applyStylesToPlayerLayer(styles) {
-  const layer = document.getElementById('player-layer');
-  // Reset previous inline styles and apply current styles
-  layer.style.cssText = 'display: flex;';
-  for (const [prop, val] of Object.entries(styles)) {
-    layer.style.setProperty(prop, val);
-  }
-}
 ```
 
 ---
 
-## 🎮 7. Official Default 8-Level Dataset Specification
+## 🎮 7. The 10 Official Curriculum Levels Specification
 
-Developer 1 will include the following 8 curriculum stages meeting all PDF criteria:
+The 10 stages cover all required Flexbox properties, combinations, and edge cases:
 
-| Level # | Title | Core Properties | Criteria Satisfied | Items Count |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | Main Thrusters: Center | `justify-content: center` | Single property introduction | 1 ship |
+| Level | Title | Target Properties | Assignment Criteria Satisfied | Items |
+| :---: | :--- | :--- | :--- | :---: |
+| **1** | Main Thrusters: Center | `justify-content: center` | Core `justify-content` | 1 scout |
 | **2** | Fleet Separation | `justify-content: space-between` | Spacing along main axis | 3 ships |
-| **3** | Vertical Alignment | `align-items: flex-end` | Cross axis alignment | 2 ships |
-| **4** | Orbital Shift (Combined) | `justify-content: flex-end` + `align-items: center` | **★ Multi-property (1 of 3)** | 2 ships |
-| **5** | Reverse Vector | `flex-direction: row-reverse` | Changing axis orientation | 3 ships |
-| **6** | Column Formation (Combined)| `flex-direction: column` + `justify-content: space-around` | **★ Multi-property (2 of 3)** | 3 ships |
-| **7** | Grid Overflow: Hyper-Wrap | `flex-wrap: wrap` + `justify-content: center` | **★ Mandatory flex-wrap requirement + Multi-property (3 of 3)** | 6 ships |
-| **8** | Master Commander | `flex-direction: column-reverse` + `align-items: flex-end` + `justify-content: space-between` | Capstone 3-property challenge | 4 ships |
+| **3** | Vertical Alignment | `align-items: flex-end` | Core `align-items` (cross axis) | 2 haulers |
+| **4** | Orbital Centerpoint | `justify-content: center`<br>`align-items: center` | **★ Multi-Property (1 of 5)** | 1 flagship |
+| **5** | Inverted Vector | `flex-direction: row-reverse` | Core `flex-direction` | 3 interceptors |
+| **6** | Column Formation | `flex-direction: column`<br>`justify-content: space-around` | **★ Multi-Property (2 of 5)** | 3 probes |
+| **7** | Corner Docking | `flex-direction: column-reverse`<br>`align-items: flex-end` | **★ Multi-Property (3 of 5)** | 2 drones |
+| **8** | Squadron Hyper-Wrap | `flex-wrap: wrap`<br>`justify-content: center` | **★ Mandatory `flex-wrap` + Multi-Property (4 of 5)** | 6 fighters |
+| **9** | Inverted Multi-Deck | `flex-wrap: wrap-reverse`<br>`justify-content: space-between` | **★ `flex-wrap` variation + Multi-Property (5 of 5)** | 6 cruisers |
+| **10** | Grand Fleet Admiral | `flex-direction: column`<br>`justify-content: space-between`<br>`align-items: center` | **★ Capstone 3-Property Challenge** | 4 flagships |
+
+---
+
+### Detailed Level Specifications (Ready for Implementation in `js/levels.js`)
+
+#### Level 1: Main Thrusters: Center
+* **Instruction (HE):** כוונו את חללית הסיור למרכז רציף הנחיתה לאורך הציר הראשי בעזרת `justify-content`.
+* **Instruction (EN):** Guide the scout ship to the center of the docking bay along the main axis using `justify-content`.
+* **Initial Styles:** `{ "justify-content": "flex-start" }`
+* **Target Styles:** `{ "justify-content": "center" }`
+* **Available Controls:** `justify-content`
+* **Items:** 1 ship (`scout-blue`)
+
+#### Level 2: Fleet Separation
+* **Instruction (HE):** פזרו את 3 חלליות הסיור במרווח שווה ביניהן לרוחב הרציף, כך שהחיצוניות ייצמדו לדפנות.
+* **Instruction (EN):** Disperse the 3 patrol ships with equal space separating them across the bay, pushing outer ships to the edges.
+* **Initial Styles:** `{ "justify-content": "flex-start" }`
+* **Target Styles:** `{ "justify-content": "space-between" }`
+* **Available Controls:** `justify-content`
+* **Items:** 3 ships (`patrol-green`)
+
+#### Level 3: Vertical Alignment
+* **Instruction (HE):** הנחיתו את 2 ספינות המשא בתחתית הרציף לאורך הציר המשני בעזרת `align-items`.
+* **Instruction (EN):** Align the 2 cargo haulers to the bottom floor of the bay along the cross axis using `align-items`.
+* **Initial Styles:** `{ "align-items": "flex-start" }`
+* **Target Styles:** `{ "align-items": "flex-end" }`
+* **Available Controls:** `align-items`
+* **Items:** 2 ships (`cargo-yellow`)
+
+#### Level 4: Orbital Centerpoint (Multi-Property)
+* **Instruction (HE):** כוונו את ספינת הפיקוד בדיוק למרכז הרציף – הן לאורך הציר הראשי והן לאורך הציר המשני.
+* **Instruction (EN):** Center the command flagship in the dead center of the bay along both the main and cross axes.
+* **Initial Styles:** `{ "justify-content": "flex-start", "align-items": "flex-start" }`
+* **Target Styles:** `{ "justify-content": "center", "align-items": "center" }`
+* **Available Controls:** `justify-content`, `align-items`
+* **Items:** 1 ship (`flagship-gold`)
+
+#### Level 5: Inverted Vector
+* **Instruction (HE):** הפכו את סדר העמידה של 3 המיירטים מימין לשמאל באמצעות שינוי כיוון הציר הראשי.
+* **Instruction (EN):** Reverse the order of the 3 interceptors from right to left by changing the main axis direction.
+* **Initial Styles:** `{ "flex-direction": "row" }`
+* **Target Styles:** `{ "flex-direction": "row-reverse" }`
+* **Available Controls:** `flex-direction`
+* **Items:** 3 ships (`interceptor-red-1`, `interceptor-red-2`, `interceptor-red-3`)
+
+#### Level 6: Column Formation (Multi-Property)
+* **Instruction (HE):** סדרו את 3 הגשושיות בעמודה אנכית מלמעלה למטה, עם רווח שווה מסביב לכל גשושית.
+* **Instruction (EN):** Arrange the 3 research probes in a vertical column from top to bottom, with equal space around each probe.
+* **Initial Styles:** `{ "flex-direction": "row", "justify-content": "flex-start" }`
+* **Target Styles:** `{ "flex-direction": "column", "justify-content": "space-around" }`
+* **Available Controls:** `flex-direction`, `justify-content`
+* **Items:** 3 ships (`probe-cyan-1`, `probe-cyan-2`, `probe-cyan-3`)
+
+#### Level 7: Corner Docking (Multi-Property)
+* **Instruction (HE):** סדרו את 2 הרחפנים בעמודה הפוכה (מלמטה למעלה) והצמידו אותם לדופן הימנית של הרציף.
+* **Instruction (EN):** Arrange the 2 drone fighters in an inverted column (bottom-to-top) aligned against the right wall of the bay.
+* **Initial Styles:** `{ "flex-direction": "row", "align-items": "flex-start" }`
+* **Target Styles:** `{ "flex-direction": "column-reverse", "align-items": "flex-end" }`
+* **Available Controls:** `flex-direction`, `align-items`
+* **Items:** 2 ships (`drone-purple-1`, `drone-purple-2`)
+
+#### Level 8: Squadron Hyper-Wrap (Mandatory flex-wrap)
+* **Instruction (HE):** טייסת של 6 חלליות אינה נכנסת בשורה אחת! אפשרו גלישת פריטים לשורות נוספות ומרכזו אותן.
+* **Instruction (EN):** A squadron of 6 fighters cannot fit on a single line! Allow items to wrap into multiple rows and center them.
+* **Initial Styles:** `{ "flex-wrap": "nowrap", "justify-content": "flex-start" }`
+* **Target Styles:** `{ "flex-wrap": "wrap", "justify-content": "center" }`
+* **Available Controls:** `flex-wrap`, `justify-content`
+* **Items:** 6 ships (`fighter-orange-1` through `fighter-orange-6`)
+
+#### Level 9: Inverted Multi-Deck (Multi-Property + flex-wrap)
+* **Instruction (HE):** סדרו את 6 הסיירות בגלישת שורות הפוכה (מלמטה למעלה), עם מרווח מקסימלי בין הספינות בכל שורה.
+* **Instruction (EN):** Arrange the 6 cruisers to wrap in reverse row order (bottom-to-top), with maximum spacing between ships in each row.
+* **Initial Styles:** `{ "flex-wrap": "nowrap", "justify-content": "flex-start" }`
+* **Target Styles:** `{ "flex-wrap": "wrap-reverse", "justify-content": "space-between" }`
+* **Available Controls:** `flex-wrap`, `justify-content`
+* **Items:** 6 ships (`cruiser-blue-1` through `cruiser-blue-6`)
+
+#### Level 10: Grand Fleet Admiral (Capstone Multi-Property)
+* **Instruction (HE):** המשימה האחרונה! סדרו את 4 ספינות הצי בעמודה, פזרו אותן מקצה לקצה לאורך העמודה ומרכזו אותן לרוחב הרציף.
+* **Instruction (EN):** The ultimate fleet deployment! Arrange the 4 capital ships in a column, spread them from end to end along the column, and center them across the bay.
+* **Initial Styles:** `{ "flex-direction": "row", "justify-content": "flex-start", "align-items": "flex-start" }`
+* **Target Styles:** `{ "flex-direction": "column", "justify-content": "space-between", "align-items": "center" }`
+* **Available Controls:** `flex-direction`, `justify-content`, `align-items`
+* **Items:** 4 ships (`admiral-star-1` through `admiral-star-4`)
 
 ---
 
@@ -346,15 +398,15 @@ Developer 1 will include the following 8 curriculum stages meeting all PDF crite
     ▼
 GameEngine.init()
     │
-    ├──> Loads progress from LocalStorage
-    └──> Returns GameState (e.g. Level 1 of 8)
+    ├──> Loads progress from LocalStorage (resumes last level or Level 1)
+    └──> Returns GameState (e.g. Level 1 of 10)
     │
     ▼
 Dev 2 renders DOM:
-    ├── Header: "שלב 1 מתוך 8"
+    ├── Header: "שלב 1 מתוך 10" (Level tracker)
     ├── Instructions & hint
-    ├── Dynamic Controls (<select> with availableProperties)
-    ├── Target Layer (docking pads positioned with targetContainerStyles)
+    ├── Dynamic Controls (<select> or buttons for availableProperties)
+    ├── Target Layer (docking bays positioned with targetContainerStyles)
     └── Player Layer (ships positioned with initialContainerStyles)
     │
     ▼
