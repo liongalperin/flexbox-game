@@ -1,0 +1,16 @@
+{
+  "name": "flexbox-game",
+  "version": "1.0.0",
+  "description": "AstroDock: Interactive Flexbox Learning Game",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "flexbox",
+    "vanilla-js",
+    "astrodock"
+  ],
+  "author": "liong",
+  "license": "MIT"
+}

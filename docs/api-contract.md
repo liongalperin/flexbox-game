@@ -346,13 +346,13 @@ function loadLevelView(level, state) {
 | **1** | Main Thrusters: Center | `justify-content: center` | Core `justify-content` | 1 scout |
 | **2** | Fleet Separation | `justify-content: space-between` | Spacing along main axis | 3 ships |
 | **3** | Vertical Alignment | `align-items: flex-end` | Core `align-items` (cross axis) | 2 haulers |
-| **4** | Orbital Centerpoint | `justify-content: center`<br>`align-items: center` | **★ Multi-Property (1 of 5)** | 1 flagship |
+| **4** | Orbital Centerpoint | `justify-content: center`<br>`align-items: center` | **★ Multi-Property (1 of 6)** | 1 flagship |
 | **5** | Inverted Vector | `flex-direction: row-reverse` | Core `flex-direction` | 3 interceptors |
-| **6** | Column Formation | `flex-direction: column`<br>`justify-content: space-around` | **★ Multi-Property (2 of 5)** | 3 probes |
-| **7** | Corner Docking | `flex-direction: column-reverse`<br>`align-items: flex-end` | **★ Multi-Property (3 of 5)** | 2 drones |
-| **8** | Squadron Hyper-Wrap | `flex-wrap: wrap`<br>`justify-content: center` | **★ Mandatory `flex-wrap` + Multi-Property (4 of 5)** | 6 fighters |
-| **9** | Inverted Multi-Deck | `flex-wrap: wrap-reverse`<br>`justify-content: space-between` | **★ `flex-wrap` variation + Multi-Property (5 of 5)** | 6 cruisers |
-| **10** | Grand Fleet Admiral | `flex-direction: column`<br>`justify-content: space-between`<br>`align-items: center` | **★ Capstone 3-Property Challenge** | 4 flagships |
+| **6** | Column Formation | `flex-direction: column`<br>`justify-content: space-around` | **★ Multi-Property (2 of 6)** | 3 probes |
+| **7** | Corner Docking | `flex-direction: column-reverse`<br>`align-items: flex-end` | **★ Multi-Property (3 of 6)** | 2 drones |
+| **8** | Squadron Hyper-Wrap | `flex-wrap: wrap`<br>`justify-content: center` | **★ Mandatory `flex-wrap` + Multi-Property (4 of 6)** | 6 fighters |
+| **9** | Inverted Multi-Deck | `flex-wrap: wrap-reverse`<br>`justify-content: space-between` | **★ `flex-wrap` variation + Multi-Property (5 of 6)** | 6 cruisers |
+| **10** | Grand Fleet Admiral | `flex-direction: column`<br>`justify-content: space-between`<br>`align-items: center` | **★ Capstone 3-Property Challenge (6 of 6)** | 3 flagships |
 
 ---
 
@@ -431,12 +431,12 @@ function loadLevelView(level, state) {
 * **Items:** 6 ships (`cruiser-blue-1` through `cruiser-blue-6`)
 
 #### Level 10: Grand Fleet Admiral (Capstone Multi-Property)
-* **Instruction (HE):** המשימה האחרונה! סדרו את 4 ספינות הצי בעמודה, פזרו אותן מקצה לקצה לאורך העמודה ומרכזו אותן לרוחב הרציף.
-* **Instruction (EN):** The ultimate fleet deployment! Arrange the 4 capital ships in a column, spread them from end to end along the column, and center them across the bay.
+* **Instruction (HE):** המשימה האחרונה! סדרו את 3 ספינות הדגל בעמודה, פזרו אותן מקצה לקצה לאורך העמודה ומרכזו אותן לרוחב הרציף.
+* **Instruction (EN):** The ultimate fleet deployment! Arrange the 3 capital flagships in a column, spread them from end to end along the column, and center them across the bay.
 * **Initial Styles:** `{ "flex-direction": "row", "justify-content": "flex-start", "align-items": "flex-start" }`
 * **Target Styles:** `{ "flex-direction": "column", "justify-content": "space-between", "align-items": "center" }`
 * **Available Controls:** `flex-direction`, `justify-content`, `align-items`
-* **Items:** 4 ships (`admiral-star-1` through `admiral-star-4`)
+* **Items:** 3 ships (`admiral-star-1` through `admiral-star-3`)
 
 ---
 
