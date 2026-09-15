@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="doc.title">מבצע קופטר — משחק ללימוד Flexbox</title>
+<meta name="description" data-i18n-attr="content:doc.desc" content="משחק אינטרנטי ללימוד ותרגול CSS Flexbox בעשרה שלבים, בנושא מסוקים ומנחתים.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ===== Helicopter template: cloned once per player item by js/ui.js ===== -->
+<template id="tpl-heli">
+  <svg class="heli__svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <path class="heli__boom" d="M46 50h8v30h-8z"/>
+    <path class="heli__fin" d="M40 78h20v6a4 4 0 0 1-4 4H44a4 4 0 0 1-4-4z"/>
+    <rect class="heli__skid" x="25" y="32" width="5" height="32" rx="2.5"/>
+    <rect class="heli__skid" x="70" y="32" width="5" height="32" rx="2.5"/>
+    <ellipse class="heli__hull" cx="50" cy="42" rx="18" ry="25"/>
+    <ellipse class="heli__glass" cx="50" cy="29" rx="11" ry="12"/>
+    <g class="heli__rotor">
+      <rect x="48" y="3" width="4" height="78" rx="2"/>
+      <rect x="11" y="40" width="78" height="4" rx="2"/>
+    </g>
+    <circle class="heli__hub" cx="50" cy="42" r="4.5"/>
+  </svg>
+</template>
+
+<!-- ===== Shown only if the module never boots (e.g. opened via file://) ===== -->
+<div id="boot-error" class="boot-error" hidden>
+  <div class="boot-error__card">
+    <h2 data-i18n="boot.title">צריך לפתוח דרך שרת</h2>
+    <p id="boot-error-msg" data-i18n="boot.msg">הדפדפן חוסם טעינת מודולים של JavaScript מקובץ מקומי.</p>
+    <p class="boot-error__hint" data-i18n="boot.note">זו מגבלת אבטחה של הדפדפן ולא תקלה במשחק — בגרסה המקוונת הכול עובד כרגיל.</p>
+    <p class="boot-error__hint"><strong data-i18n="boot.easy">הדרך הפשוטה:</strong> <span data-i18n="boot.easyText">פתחו את הגרסה החיה ב-GitHub Pages.</span></p>
+    <p class="boot-error__hint"><strong data-i18n="boot.local">להרצה מקומית:</strong> <span data-i18n="boot.localText">מתיקיית הפרויקט הריצו</span></p>
+    <code class="boot-error__code" dir="ltr">python3 -m http.server 8000</code>
+    <p class="boot-error__hint"><span data-i18n="boot.then">ואז פתחו</span> <code dir="ltr">http://localhost:8000</code></p>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand__mark" aria-hidden="true">
+      <span class="brand__rotor"></span>
+    </span>
+    <div class="brand__text">
+      <h1 class="brand__title" data-i18n="brand.title">מבצע קופטר</h1>
+      <span class="brand__sub" data-i18n="brand.sub">משחק ללימוד Flexbox</span>
+    </div>
+  </div>
+  <div class="topbar__actions">
+    <button type="button" id="btn-lang" class="iconbtn" aria-pressed="false">
+      <span dir="ltr">EN</span>
+    </button>
+    <button type="button" id="btn-sound" class="iconbtn" aria-pressed="true">
+      <span id="sound-icon" aria-hidden="true">🔊</span>
+      <span class="sr-only" data-i18n="a11y.sound">צליל</span>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ========== Board column ========== -->
+  <section class="panel panel--board" aria-labelledby="board-heading">
+    <h2 class="sr-only" id="board-heading" data-i18n="a11y.board">לוח המשחק</h2>
+    <div class="hud">
+      <p class="hud__level" id="hud-level"><span data-i18n="hud.level">שלב</span> <b id="hud-current">1</b> <span data-i18n="hud.of">מתוך</span> <b id="hud-total">10</b></p>
+      <p class="hud__title" id="hud-title"></p>
+      <p class="hud__env" id="hud-env"></p>
+      <p class="hud__attempts"><span data-i18n="hud.attempts">ניסיונות בשלב:</span> <b id="hud-attempts">0</b></p>
+    </div>
+
+    <div class="board-host" id="board-host">
+      <div class="board-wrapper" id="board-wrapper">
+        <div class="board-container" id="board">
+          <div class="board__scene" aria-hidden="true"></div>
+          <div class="board__mesh" aria-hidden="true"></div>
+          <div id="target-layer" class="flex-layer target-layer" aria-hidden="true"></div>
+          <div id="player-layer" class="flex-layer player-layer"></div>
+          <div class="banner" id="banner" hidden>
+            <p class="banner__title" id="banner-title"></p>
+            <p class="banner__text" id="banner-text"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- ========== Console column ========== -->
+  <section class="panel panel--console" data-i18n-attr="aria-label:a11y.console" aria-label="לוח בקרה">
+
+    <div class="brief">
+      <h2 class="brief__head" data-i18n="brief.head">הוראת משימה</h2>
+      <p class="brief__text" id="instruction" aria-live="polite"></p>
+      <button type="button" id="btn-hint" class="linkbtn" aria-expanded="false" aria-controls="hint" data-i18n="brief.hint">רמז</button>
+      <p class="hint" id="hint" hidden></p>
+    </div>
+
+    <section class="editor" data-i18n-attr="aria-label:a11y.editor" aria-label="עורך CSS">
+      <div class="editor__top">
+        <h2 class="editor__title" data-i18n="editor.title">עורך CSS</h2>
+        <p class="editor__lead" data-i18n="editor.lead">הקישו על שם מאפיין כדי לראות את הערכים האפשריים</p>
+      </div>
+
+      <div class="props" id="prop-chips"></div>
+
+      <div class="code">
+        <div class="code__gutter" id="code-gutter" aria-hidden="true"></div>
+        <div class="code__body">
+          <pre class="code__fixed" id="code-selector">#deck {</pre>
+          <pre class="code__fixed">  display: flex;</pre>
+          <label class="sr-only" for="code-input" data-i18n="a11y.codeLabel">הצהרות CSS עבור המכולה</label>
+          <textarea id="code-input" class="code__input" rows="3"
+                    spellcheck="false" autocomplete="off" autocapitalize="off"
+                    autocorrect="off" dir="ltr"></textarea>
+          <pre class="code__fixed">}</pre>
+        </div>
+      </div>
+
+      <p class="code__msg" id="code-msg" aria-live="polite"></p>
+    </section>
+
+    <div class="actions">
+      <button type="button" id="btn-check" class="btn btn--primary" data-i18n="btn.check">בדוק פתרון</button>
+      <button type="button" id="btn-reset" class="btn btn--ghost" data-i18n="btn.reset">אפס שלב</button>
+      <button type="button" id="btn-prev" class="btn btn--ghost" data-i18n="btn.prev">הקודם</button>
+      <button type="button" id="btn-next" class="btn btn--next" data-i18n="btn.next" disabled>השלב הבא</button>
+    </div>
+
+    <nav class="levels" id="levels-nav" data-i18n-attr="aria-label:a11y.levelNav" aria-label="בחירת שלב">
+      <h2 class="levels__head" data-i18n="levels.head">שלבים</h2>
+      <ol class="levels__list" id="levels-list"></ol>
+    </nav>
+  </section>
+</main>
+
+<!-- ===== Victory overlay ===== -->
+<div class="victory" id="victory" hidden>
+  <div class="victory__card" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+    <p class="victory__badge" aria-hidden="true">★</p>
+    <h2 class="victory__title" id="victory-title" data-i18n="victory.title">כל המשימות הושלמו!</h2>
+    <p class="victory__text" id="victory-text"></p>
+    <div class="victory__actions">
+      <button type="button" id="btn-replay" class="btn btn--primary" data-i18n="victory.replay">שחק מחדש</button>
+      <button type="button" id="btn-close-victory" class="btn btn--ghost" data-i18n="victory.close">סגור</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p data-i18n="footer">נבנה עם HTML, CSS ו-JavaScript בלבד — ללא ספריות חיצוניות.</p>
+</footer>
+
+<script>
+/* Classic (non-module) watchdog. If js/ui.js never boots — the usual cause is
+   opening this file over file:// where ES modules are blocked by CORS — show a
+   readable message instead of a blank page. */
+window.__gameBooted = false;
+setTimeout(function () {
+  if (window.__gameBooted) return;
+  var box = document.getElementById('boot-error');
+  var msg = document.getElementById('boot-error-msg');
+  if (msg && location.protocol === 'file:') {
+    msg.textContent = 'הדפדפן חוסם טעינת מודולים מקובץ מקומי (file://).';
+  }
+  if (box) box.hidden = false;
+}, 1500);
+</script>
+<script type="module" src="js/ui.js"></script>
+</body>
+</html>
