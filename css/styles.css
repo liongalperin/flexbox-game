@@ -1,0 +1,740 @@
+/* ============================================================================
+   מבצע קופטר — Tactical Helicopter Flexbox Trainer
+   Presentation layer. Pure CSS3: no frameworks, no CDN assets, no CSS Grid.
+   Layout everywhere is Flexbox, which is also the subject being taught.
+   ========================================================================== */
+
+/* ---------- 1. Design tokens ---------- */
+:root {
+  --bg:        #0a1017;
+  --bg-2:      #0f1822;
+  --panel:     #16222f;
+  --panel-2:   #1b2937;
+  --line:      #27394b;
+  --line-soft: #1e2d3d;
+  --ink:       #e6eef7;
+  --muted:     #93a7bb;
+
+  --green:     #4ade80;
+  --green-dim: #22c55e;
+  --blue:      #38bdf8;
+  --orange:    #fb923c;
+  --red:       #f87171;
+
+  --radius:    14px;
+  --radius-sm: 9px;
+  --shadow:    0 18px 40px rgba(0, 0, 0, .45);
+
+  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, Rubik, Arial, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+}
+
+/* ---------- 2. Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font);
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 78% -12%, rgba(56, 189, 248, .13), transparent 60%),
+    radial-gradient(760px 480px at 12% 108%, rgba(74, 222, 128, .10), transparent 62%);
+  background-attachment: fixed;
+  line-height: 1.55;
+}
+
+h1, h2, p, ol, figure { margin: 0; }
+ol { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; }
+code { font-family: var(--mono); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- 3. Top bar ---------- */
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px clamp(14px, 4vw, 34px);
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(10, 16, 23, .8);
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+
+.brand__mark {
+  display: flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; flex: 0 0 auto;
+  border: 1px solid rgba(74, 222, 128, .45);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(74, 222, 128, .22), transparent 70%);
+}
+
+.brand__rotor {
+  position: relative;
+  width: 26px; height: 2px;
+  background: var(--green);
+  border-radius: 2px;
+  animation: rotor-spin 1.1s linear infinite;
+}
+.brand__rotor::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--green);
+  border-radius: 2px;
+  transform: rotate(90deg);
+}
+
+.brand__text { display: flex; flex-direction: column; }
+.brand__title { font-size: 1.12rem; font-weight: 700; letter-spacing: .3px; }
+.brand__sub { font-size: .78rem; color: var(--muted); }
+
+.topbar__actions { display: flex; align-items: center; gap: 8px; }
+
+.iconbtn {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 42px; height: 36px; padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+.iconbtn:hover { border-color: var(--blue); background: var(--panel-2); }
+.iconbtn[aria-pressed="true"] { border-color: rgba(74, 222, 128, .5); }
+
+/* ---------- 4. Page layout ---------- */
+.layout {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(16px, 2.4vw, 28px);
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 30px);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(14px, 2vw, 20px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  box-shadow: var(--shadow);
+}
+
+/* flex-basis 480px + grow means the panel's width comes from the available
+   space, NOT from the board inside it. That breaks the circular measurement
+   in fitBoard(): board-host reports real free space instead of whatever the
+   wrapper happened to be set to on the previous pass. max-width keeps the
+   panel from ballooning past the board + its padding on wide screens. */
+.panel--board   { flex: 1 1 480px; align-items: stretch; min-width: 0; max-width: 522px; }
+.panel--console { flex: 1 1 340px; min-width: 0; max-width: 460px; }
+
+/* ---------- 5. HUD ---------- */
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.hud__level { font-size: 1.02rem; }
+.hud__level b { color: var(--green); }
+.hud__title { flex: 1 1 100%; order: 3; font-size: .86rem; color: var(--muted); }
+.hud__attempts { font-size: .84rem; color: var(--muted); }
+.hud__attempts b { color: var(--orange); }
+
+/* ---------- 6. Board ---------- *
+   REQUIREMENT: the board keeps a FIXED 480x480 width/height at every screen
+   size, so each level's solution is identical regardless of resolution.
+   Those two declarations are never overridden anywhere in this file.
+   Narrow screens only get a visual transform: scale(), which is a paint-time
+   operation and leaves the 480px layout box — and therefore the flex maths —
+   completely untouched. js/ui.js sizes .board-wrapper to match the scaled
+   result so no blank space is left behind.                                   */
+
+.board-host { display: flex; justify-content: center; width: 100%; min-width: 0; }
+
+.board-wrapper {
+  position: relative;
+  width: 480px;
+  height: 480px;
+  max-width: 100%;
+  flex: 0 0 auto;
+  direction: ltr;   /* make the board's containing block unambiguously LTR */
+}
+
+.board-container {
+  position: absolute;
+  top: 0;
+  left: 0;         /* physical, to match transform-origin: top left */
+  width: 480px;    /* fixed — never overridden */
+  height: 480px;   /* fixed — never overridden */
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(74, 222, 128, .07), transparent 68%),
+    linear-gradient(160deg, #0e1a24, #0a1420 60%, #0c1b16);
+  transform-origin: top left;
+  /* api-contract §7: the board must force LTR so that flex main/cross axes
+     stay deterministic even though the page itself is dir="rtl". */
+  direction: ltr !important;
+}
+
+/* Faint tactical mesh + vignette. Gradients only; not CSS layout. */
+.board__mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg,  rgba(74, 222, 128, .055) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgba(74, 222, 128, .055) 0 1px, transparent 1px 48px);
+}
+.board__mesh::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(0, 0, 0, .55));
+}
+
+/* ---------- 7. The two flex layers ----------
+   Both layers share identical geometry so a helicopter lands exactly on its
+   pad when the player's styles match the target's.                          */
+.flex-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;          /* the mandatory display:flex container */
+  padding: 16px;          /* -> 448x448 of usable content box */
+  direction: ltr !important;   /* api-contract §7 */
+}
+
+.target-layer { z-index: 1; pointer-events: none; }
+.player-layer { z-index: 2; }
+
+/* ---------- 8. Items ----------
+   Every item — pad or helicopter — occupies the same 96x96 footprint, and
+   never shrinks, so wrapping behaviour is deterministic:
+   6 x 96 = 576px > 448px of content width, therefore levels 8 and 9 wrap. */
+.slot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+}
+
+/* --- Helipads (target layer) --- */
+.pad__disc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 78px;
+  height: 78px;
+  border: 2px dashed rgba(122, 240, 160, .8);
+  border-radius: 50%;
+  /* dark disc under the marker so it reads over busy photographs */
+  background:
+    radial-gradient(circle,
+      rgba(74, 222, 128, .2) 0 38%,
+      rgba(5, 12, 18, .58) 39% 70%,
+      rgba(5, 12, 18, .3) 71% 100%);
+  box-shadow: 0 0 22px rgba(74, 222, 128, .3), inset 0 0 16px rgba(74, 222, 128, .18);
+  animation: pad-pulse 2.8s ease-in-out infinite;
+}
+.pad__h {
+  font: 700 32px/1 var(--font);
+  color: #9cf5bd;
+  text-shadow: 0 0 14px rgba(74, 222, 128, .75), 0 2px 4px rgba(0, 0, 0, .95);
+}
+
+/* --- Helicopters (player layer) --- */
+.heli {
+  color: var(--heli-color, #94a3b8);
+  transition: transform .5s cubic-bezier(.34, 1.16, .44, 1), filter .25s ease;
+  will-change: transform;
+}
+.heli__svg {
+  width: 76px; height: 76px; display: block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .85)) drop-shadow(0 0 2px rgba(0, 0, 0, .9));
+}
+
+.heli__hull  { fill: currentColor; }
+.heli__boom  { fill: currentColor; opacity: .88; }
+.heli__fin   { fill: currentColor; opacity: .7; }
+.heli__skid  { fill: currentColor; opacity: .45; }
+.heli__glass { fill: #08111a; opacity: .72; }
+.heli__hub   { fill: #08111a; }
+.heli__rotor rect { fill: #dbe7f3; opacity: .7; }
+
+.heli__rotor {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rotor-spin .32s linear infinite;
+}
+
+/* Colour variants, derived from the engine's GameItem.type strings. */
+.heli--blue    { --heli-color: #38bdf8; }
+.heli--green   { --heli-color: #4ade80; }
+.heli--yellow  { --heli-color: #facc15; }
+.heli--gold    { --heli-color: #fbbf24; }
+.heli--star    { --heli-color: #fbbf24; }
+.heli--red     { --heli-color: #f87171; }
+.heli--cyan    { --heli-color: #22d3ee; }
+.heli--purple  { --heli-color: #c084fc; }
+.heli--orange  { --heli-color: #fb923c; }
+.heli--pink    { --heli-color: #f472b6; }
+.heli--default { --heli-color: #94a3b8; }
+
+
+/* --- Landed state, applied after a correct answer --- */
+.player-layer.is-landed .heli__rotor { animation-duration: 1.6s; opacity: .45; }
+.player-layer.is-landed .heli__svg   { filter: drop-shadow(0 0 14px rgba(74, 222, 128, .75)); }
+
+/* --- Failure shake --- */
+.player-layer.is-wrong { animation: shake .5s cubic-bezier(.36, .07, .19, .97) both; }
+
+/* ---------- 9. Banner ---------- */
+.banner {
+  position: absolute;
+  z-index: 3;
+  inset-inline: 18px;
+  inset-block-start: 18px;
+  padding: 12px 16px;
+  border: 1px solid rgba(74, 222, 128, .55);
+  border-radius: var(--radius-sm);
+  background: rgba(12, 32, 22, .94);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  direction: rtl;
+  text-align: center;
+  animation: banner-in .45s cubic-bezier(.2, .9, .3, 1.35) both;
+}
+.banner--fail { border-color: rgba(248, 113, 113, .55); background: rgba(40, 16, 18, .94); }
+.banner__title { font-size: 1.02rem; color: var(--green); }
+.banner--fail .banner__title { color: var(--red); }
+.banner__text { font-size: .84rem; color: var(--muted); }
+
+/* ---------- 10. Feedback line ---------- */
+.feedback { min-height: 1.5em; font-size: .88rem; color: var(--muted); }
+.feedback--ok   { color: var(--green); }
+.feedback--bad  { color: var(--orange); }
+
+/* ---------- 11. Brief / instruction ---------- */
+.brief {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-inline-start: 3px solid var(--blue);
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, .06);
+}
+.brief__head { font-size: .74rem; letter-spacing: 1.4px; color: var(--blue); text-transform: uppercase; }
+.brief__text { font-size: .97rem; }
+
+.linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font-size: .82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hint {
+  font-size: .85rem;
+  color: var(--muted);
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .04);
+}
+
+/* ---------- 12. CSS editor + property reference ---------- */
+.editor { display: flex; flex-direction: column; gap: 10px; }
+.editor__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px; }
+.editor__title { font-size: .74rem; letter-spacing: 1.4px; color: var(--muted); text-transform: uppercase; }
+.editor__lead { font-size: .76rem; color: var(--muted); }
+
+/* --- Tappable property chips with a values tooltip --- */
+.props { display: flex; flex-wrap: wrap; gap: 6px; }
+.prop { position: relative; }
+
+.prop__btn {
+  padding: 5px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  background: #0d1621;
+  color: var(--blue);
+  font-family: var(--mono);
+  font-size: .76rem;
+  direction: ltr;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.prop__btn:hover,
+.prop__btn[aria-expanded="true"] { border-style: solid; border-color: var(--blue); background: rgba(56, 189, 248, .12); }
+
+.prop__tip {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + 7px);
+  inset-inline-start: 0;
+  width: max-content;
+  max-width: min(300px, 78vw);
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #0b131c;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .6);
+  animation: banner-in .18s ease both;
+}
+.prop__tip[hidden] { display: none; }
+.prop__tip::before {
+  content: "";
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 14px;
+  border: 6px solid transparent;
+  border-block-end-color: var(--line);
+}
+.prop__desc { font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+.prop__values { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.val {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #131f2b;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: .73rem;
+  direction: ltr;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+.val:hover { border-color: var(--green); color: var(--green); background: rgba(74, 222, 128, .12); }
+.val__note { color: var(--muted); font-size: .68rem; }
+
+/* --- The code pane --- */
+.code {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #0b131c;
+  overflow: hidden;
+  direction: ltr;
+}
+.code:focus-within { border-color: var(--blue); }
+
+.code__gutter {
+  flex: 0 0 auto;
+  padding: 10px 8px;
+  border-inline-end: 1px solid var(--line-soft);
+  background: #0a1017;
+  color: #4d6377;
+  font: .82rem/1.65 var(--mono);
+  text-align: right;
+  white-space: pre;
+  user-select: none;
+}
+
+.code__body { flex: 1 1 auto; min-width: 0; padding: 10px 12px; }
+
+.code__fixed {
+  margin: 0;
+  font: .82rem/1.65 var(--mono);
+  color: #6f8598;
+  white-space: pre;
+}
+
+.code__input {
+  display: block;
+  width: 100%;
+  /* 2ch matches the indent of the fixed "  display: flex;" line above */
+  padding: 2px 0 2px 2ch;
+  margin: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: .82rem/1.65 var(--mono);
+  resize: none;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+  outline: none;
+  border-inline-start: 2px solid rgba(56, 189, 248, .55);
+  border-radius: 3px;
+  background: rgba(56, 189, 248, .07);
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.code__input:focus {
+  background: rgba(56, 189, 248, .12);
+  border-inline-start-color: var(--blue);
+}
+.code__input::placeholder { color: #43586b; }
+
+.code.is-error { border-color: rgba(248, 113, 113, .7); }
+.code.is-shake { animation: shake .45s cubic-bezier(.36, .07, .19, .97) both; }
+.code__msg { min-height: 1.3em; font-size: .78rem; color: var(--muted); }
+.code__msg--bad { color: var(--orange); }
+.code__msg--ok  { color: var(--green); }
+
+.prop.is-set .prop__btn {
+  border-style: solid;
+  border-color: rgba(74, 222, 128, .75);
+  color: var(--green);
+  background: rgba(74, 222, 128, .12);
+}
+.prop.is-set .prop__btn::after {
+  content: " ✓";
+  font-weight: 700;
+}
+
+.prop.is-mismatch .prop__btn {
+  border-style: solid;
+  border-color: rgba(248, 113, 113, .8);
+  color: var(--red);
+  background: rgba(248, 113, 113, .1);
+}
+
+/* ---------- 13. Action buttons ---------- */
+.actions { display: flex; flex-wrap: wrap; gap: 9px; }
+
+.btn {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 11px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .12s ease, background-color .18s ease, border-color .18s ease, opacity .18s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn--primary { flex: 2 1 150px; background: linear-gradient(180deg, var(--green), var(--green-dim)); color: #062012; }
+.btn--primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+.btn--ghost { flex: 0 1 96px; border-color: var(--line); background: var(--panel-2); color: var(--muted); }
+.btn--ghost:hover:not(:disabled) { border-color: var(--blue); color: var(--ink); }
+
+.btn--next { background: linear-gradient(180deg, var(--blue), #0ea5e9); color: #04202e; }
+.btn--next:not(:disabled) { animation: nudge 1.5s ease-in-out infinite; }
+
+/* ---------- 14. Level picker ---------- */
+.levels { display: flex; flex-direction: column; gap: 9px; padding-top: 4px; border-top: 1px solid var(--line-soft); }
+.levels__head { font-size: .74rem; letter-spacing: 1.4px; color: var(--muted); text-transform: uppercase; padding-top: 10px; }
+.levels__list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.lvl {
+  width: 34px; height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: .84rem;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+.lvl:hover:not(:disabled) { border-color: var(--blue); color: var(--ink); }
+.lvl.is-done { border-color: rgba(74, 222, 128, .5); color: var(--green); background: rgba(74, 222, 128, .1); }
+.lvl.is-current { border-color: var(--blue); color: #04202e; background: var(--blue); font-weight: 700; }
+.lvl:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---------- 15. Victory overlay ---------- */
+.victory {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(4, 9, 14, .82);
+  animation: fade-in .3s ease both;
+}
+.victory[hidden] { display: none; }
+
+.victory__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+  padding: 30px 26px;
+  text-align: center;
+  border: 1px solid rgba(74, 222, 128, .4);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  box-shadow: var(--shadow);
+  animation: banner-in .5s cubic-bezier(.2, .9, .3, 1.3) both;
+}
+.victory__badge { font-size: 2.6rem; color: var(--green); animation: pad-pulse 2s ease-in-out infinite; }
+.victory__title { font-size: 1.3rem; }
+.victory__text  { font-size: .9rem; color: var(--muted); }
+.victory__actions { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; }
+
+/* ---------- 16. Boot error ---------- */
+.boot-error {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(4, 9, 14, .94);
+}
+.boot-error[hidden] { display: none; }
+.boot-error__card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 440px;
+  padding: 26px;
+  border: 1px solid rgba(251, 146, 60, .5);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.boot-error__hint { font-size: .85rem; color: var(--muted); }
+.boot-error__code {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #0b131c;
+  color: var(--green);
+  direction: ltr;
+  font-size: .85rem;
+}
+
+/* ---------- 17. Footer ---------- */
+.footer {
+  padding: 16px;
+  text-align: center;
+  font-size: .78rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line-soft);
+}
+
+/* ---------- 18. Keyframes ---------- */
+@keyframes rotor-spin { to { transform: rotate(360deg); } }
+
+@keyframes pad-pulse {
+  0%, 100% { opacity: .68; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.045); }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-14px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+/* ---------- 19. Responsive ----------
+   Only the *visual* scale of the board changes. Its width/height stay 480px.  */
+@media (max-width: 1000px) {
+  .panel--console { max-width: 520px; flex-basis: 100%; }
+}
+
+/* CSS fallback if JS scaling is unavailable; ui.js overrides these inline. */
+@media (max-width: 520px) {
+  .board-container { transform: scale(.72); }
+  .board-wrapper   { width: 346px; height: 346px; }
+}
+@media (max-width: 380px) {
+  .board-container { transform: scale(.62); }
+  .board-wrapper   { width: 298px; height: 298px; }
+}
+
+/* ---------- 20. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .heli__rotor, .brand__rotor { animation: none; }
+}
+
+/* ---------- 21. Operating environments ----------
+   One photographic scene per level, stored locally in assets/maps/ (see the
+   CREDITS.md there for source and licence). Nothing is fetched at runtime.
+   A scrim plus a vignette keeps the helipads and helicopters readable over
+   every photo; the fallback colour shows if an image is ever missing. */
+
+.board__scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: #0e1a24;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* readability treatment over the photograph */
+.board__scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 40%, rgba(5, 10, 16, .62)),
+    linear-gradient(180deg, rgba(6, 12, 18, .5), rgba(6, 12, 18, .3) 45%, rgba(6, 12, 18, .58));
+}
+
+.hud__env { font-size: .78rem; color: var(--blue); }
+
+[data-env="airbase"]  .board__scene { background-image: url("../assets/maps/airbase.jpg");  background-color: #16202a; }
+[data-env="desert"]   .board__scene { background-image: url("../assets/maps/desert.jpg");   background-color: #6b4f2a; }
+[data-env="city"]     .board__scene { background-image: url("../assets/maps/city.jpg");     background-color: #141a2c; }
+[data-env="sea"]      .board__scene { background-image: url("../assets/maps/sea.jpg");      background-color: #0e3a58; }
+[data-env="jungle"]   .board__scene { background-image: url("../assets/maps/jungle.jpg");   background-color: #16341f; }
+[data-env="arctic"]   .board__scene { background-image: url("../assets/maps/arctic.jpg");   background-color: #4d7ea0; }
+[data-env="night"]    .board__scene { background-image: url("../assets/maps/night.jpg");    background-color: #0b1020; }
+[data-env="volcano"]  .board__scene { background-image: url("../assets/maps/volcano.jpg");  background-color: #2a1512; }
+[data-env="mountain"] .board__scene { background-image: url("../assets/maps/mountain.jpg"); background-color: #3b4757; }
+[data-env="storm"]    .board__scene { background-image: url("../assets/maps/storm.jpg");    background-color: #1a2438; }
